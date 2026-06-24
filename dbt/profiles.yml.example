@@ -1,0 +1,36 @@
+# dbt profiles — football-intelligence-lakehouse
+# Copiar a ~/.dbt/profiles.yml o usar --profiles-dir ./dbt en cada comando dbt
+#
+# Target por defecto: neon (Neon.tech — Silver + Gold)
+# Target local: local (PostgreSQL local, para desarrollo offline)
+#
+# Nota de migración: cuando se tenga acceso a BigQuery, agregar un tercer target
+# "bigquery" con type: bigquery y mover los modelos de marts/ a ese target.
+# El cambio es de 5 líneas en este archivo — el código SQL no cambia.
+
+football_lakehouse:
+  target: neon
+  outputs:
+
+    # ── Neon.tech (Silver + Gold — producción / pipeline diario) ─────────────
+    neon:
+      type: postgres
+      host: "{{ env_var('POSTGRES_HOST') }}"
+      user: "{{ env_var('POSTGRES_USER') }}"
+      password: "{{ env_var('POSTGRES_PASSWORD') }}"
+      port: "{{ env_var('POSTGRES_PORT', '5432') | int }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      schema: silver
+      threads: 4
+      sslmode: require               # Neon.tech requiere SSL
+
+    # ── Local (desarrollo offline con Docker PostgreSQL) ──────────────────────
+    local:
+      type: postgres
+      host: localhost
+      user: airflow_admin
+      password: airflow_admin
+      port: 5432
+      dbname: airflow
+      schema: silver
+      threads: 4

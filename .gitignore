@@ -1,0 +1,59 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+build/
+dist/
+wheels/
+*.egg-info/
+
+# ── Entornos virtuales ────────────────────────────────────────────────────────
+.venv/
+
+# ── Variables de entorno — NUNCA commitear credenciales ──────────────────────
+.env
+# .env.example sí se commitea (muestra las variables necesarias sin valores)
+
+# ── Datos locales (Bronze/Silver/Gold) ───────────────────────────────────────
+# Pueden pesar varios GB con StatsBomb events completos
+data/
+
+# ── Modelos ML entrenados ─────────────────────────────────────────────────────
+# Se regeneran con: python -m ml.train
+models/*.pkl
+models/*.joblib
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+airflow/logs/
+
+# ── dbt ──────────────────────────────────────────────────────────────────────
+dbt/target/
+dbt/.user.yml
+dbt/profiles.yml
+dbt/dbt_packages/
+dbt/logs/
+# dbt/profiles.yml.example sí se commitea
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+
+# ── pytest / CI ───────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Instrucciones privadas para Claude Code ───────────────────────────────────
+CLAUDE.md
+
+# ── Documentos internos de planificación ─────────────────────────────────────
+football_lakehouse_blueprint.md
+
+# ── Scripts de debug temporales ───────────────────────────────────────────────
+scripts/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini

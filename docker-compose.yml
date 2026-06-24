@@ -1,0 +1,226 @@
+# football-intelligence-lakehouse
+# Servicios: PostgreSQL (Airflow) · MinIO · Apache Airflow (LocalExecutor) · FastAPI
+#
+# Arquitectura de capas:
+#   Bronze  →  MinIO local             (Parquet particionado)
+#   Silver  →  Neon.tech PostgreSQL    (dbt staging + tests de calidad)
+#   Gold    →  Neon.tech PostgreSQL    (dbt marts → Looker Studio)
+#
+# IMPORTANTE: El servicio `postgres` aquí es SOLO para los metadatos internos de
+# Airflow. El data warehouse (Silver + Gold) vive en Neon.tech — las variables
+# POSTGRES_* del .env apuntan a Neon, no a este contenedor.
+#
+# Uso rápido:
+#   cp .env.example .env                        → configura variables
+#   docker-compose up -d                        → infraestructura + Airflow
+#   docker-compose --profile api up -d          → incluye FastAPI
+
+version: '3.8'
+
+# ── Configuración compartida de Airflow ────────────────────────────────────────
+x-airflow-common:
+  &airflow-common
+  image: apache/airflow:2.9.3-python3.11
+  environment:
+    # Core
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    PYTHONPATH: /opt/airflow
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    # Metadatos de Airflow → PostgreSQL interno (hardcoded, distinto al data warehouse)
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_admin:airflow_admin@postgres/airflow
+    # Webserver
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: 'true'
+    AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_SECRET_KEY:-supersecret-change-in-prod}
+    # Paquetes adicionales instalados al arrancar
+    _PIP_ADDITIONAL_REQUIREMENTS: >-
+      requests
+      pandas
+      pyarrow
+      minio
+      statsbombpy
+      psycopg2-binary
+      dbt-postgres<2.0
+      scikit-learn
+    # ── Variables del data warehouse (Neon.tech) ──────────────────────────────
+    # Estas variables vienen del .env y apuntan a Neon.tech, no al postgres interno
+    POSTGRES_HOST: ${POSTGRES_HOST}
+    POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+    POSTGRES_DB: ${POSTGRES_DB}
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    # ── Variables de APIs e ingesta ───────────────────────────────────────────
+    API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+    API_FOOTBALL_BASE_URL: ${API_FOOTBALL_BASE_URL}
+    WORLDCUP26_EMAIL: ${WORLDCUP26_EMAIL}
+    WORLDCUP26_PASSWORD: ${WORLDCUP26_PASSWORD}
+    MINIO_ENDPOINT: minio:9000
+    MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+    MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    MINIO_BUCKET: ${MINIO_BUCKET}
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags
+    - ./airflow/plugins:/opt/airflow/plugins
+    - ./ingestion:/opt/airflow/ingestion
+    - ./ml:/opt/airflow/ml
+    - ./dbt:/opt/airflow/dbt
+    - airflow-logs:/opt/airflow/logs
+  depends_on:
+    &airflow-common-depends-on
+    postgres:
+      condition: service_healthy
+  networks:
+    - football-net
+
+
+services:
+
+  # ── PostgreSQL interno — SOLO metadatos de Airflow ───────────────────────────
+  # No es el data warehouse. El DW está en Neon.tech.
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow_admin
+      POSTGRES_PASSWORD: airflow_admin
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow_admin -d airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - football-net
+    restart: unless-stopped
+
+  # ── MinIO — Bronze layer (Parquet) ───────────────────────────────────────────
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"                   # API S3
+      - "9001:9001"                   # Consola web → http://localhost:9001
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - football-net
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 $$MINIO_ACCESS_KEY $$MINIO_SECRET_KEY &&
+        mc mb --ignore-existing local/$$MINIO_BUCKET &&
+        echo '✓ Bucket $$MINIO_BUCKET listo'
+      "
+    networks:
+      - football-net
+
+  # ── Airflow ──────────────────────────────────────────────────────────────────
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@football.local \
+          --password admin
+        echo "✓ Airflow listo · http://localhost:8080 · admin / admin"
+    restart: "no"
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname \"$${HOSTNAME}\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      <<: *airflow-common-depends-on
+      airflow-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ── FastAPI ──────────────────────────────────────────────────────────────────
+  # Activar con: docker-compose --profile api up -d
+
+  api:
+    profiles: ["api"]
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      # La API se conecta al data warehouse en Neon.tech
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      MODEL_PATH: ${MODEL_PATH:-/app/models/model_winner_predictor.pkl}
+    volumes:
+      - ./models:/app/models:ro
+    networks:
+      - football-net
+    restart: unless-stopped
+
+
+# ── Redes y volúmenes ─────────────────────────────────────────────────────────
+
+networks:
+  football-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  minio-data:
+  airflow-logs:

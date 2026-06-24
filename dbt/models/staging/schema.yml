@@ -1,0 +1,112 @@
+version: 2
+
+models:
+  - name: stg_matches_sb
+    description: "Partidos StatsBomb (WC2022, Copa América 2021, Euro 2020, Nations League) con campos JSON aplanados"
+    columns:
+      - name: match_id
+        description: "ID único del partido en StatsBomb"
+        data_tests:
+          - not_null
+          - unique
+      - name: competition_slug
+        description: "Identificador de la competición"
+        data_tests:
+          - not_null
+      - name: home_score
+        description: "Goles del equipo local al final del partido"
+        data_tests:
+          - not_null
+      - name: away_score
+        data_tests:
+          - not_null
+
+  - name: stg_matches_wc2026
+    description: "Partidos WC2026 en vivo desde worldcup26.ir (partidos finalizados y programados)"
+    columns:
+      - name: match_id
+        description: "fixture_id de worldcup26.ir"
+        data_tests:
+          - not_null
+          - unique
+
+  - name: stg_events_sb
+    description: "Eventos StatsBomb aplanados: tiros, pases, presiones, porteos, etc."
+    columns:
+      - name: event_id
+        description: "UUID del evento en StatsBomb"
+        data_tests:
+          - not_null
+          - unique
+      - name: match_id
+        data_tests:
+          - not_null
+      - name: event_type
+        data_tests:
+          - not_null
+
+  - name: stg_player_stats_sb
+    description: "Estadísticas por jugador por partido agregadas desde eventos StatsBomb"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+      - name: player_id_sb
+        data_tests:
+          - not_null
+
+  - name: stg_player_stats_wc2026
+    description: "Estadísticas por jugador por partido WC2026 (vacío: worldcup26.ir no expone player stats)"
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+      - name: player_id_api
+        data_tests:
+          - not_null
+
+  - name: stg_onside_predictions
+    description: "Predicciones Monte Carlo de Onside Arena (10,000 simulaciones por partido WC2026)"
+    columns:
+      - name: fixture_id
+        data_tests:
+          - not_null
+          - unique
+      - name: home_win_pct
+        data_tests:
+          - not_null
+      - name: draw_pct
+        data_tests:
+          - not_null
+      - name: away_win_pct
+        data_tests:
+          - not_null
+
+  - name: stg_onside_champions
+    description: "Probabilidades de campeón por equipo (Onside Arena Monte Carlo)"
+    columns:
+      - name: team_name
+        data_tests:
+          - not_null
+          - unique
+      - name: champion_pct
+        data_tests:
+          - not_null
+
+  - name: stg_wc_history
+    description: "Resultados históricos de Mundiales FIFA 1930-2022"
+    columns:
+      - name: match_date
+        data_tests:
+          - not_null
+      - name: home_team_raw
+        data_tests:
+          - not_null
+      - name: away_team_raw
+        data_tests:
+          - not_null
+      - name: result
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: ["home_win", "away_win", "draw"]

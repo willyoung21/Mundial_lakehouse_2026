@@ -1,0 +1,49 @@
+canonical_name,fifa_code,confederation,apifootball_id,statsbomb_id,alt_names
+Argentina,ARG,CONMEBOL,6,779,Argentina
+Brazil,BRA,CONMEBOL,5,-1,Brazil;Brasil
+Uruguay,URU,CONMEBOL,15,-1,Uruguay
+Colombia,COL,CONMEBOL,12,-1,Colombia
+Ecuador,ECU,CONMEBOL,36,-1,Ecuador
+Paraguay,PAR,CONMEBOL,24,-1,Paraguay
+France,FRA,UEFA,2,-1,France;Francia
+England,ENG,UEFA,45,-1,England;Inglaterra
+Spain,ESP,UEFA,9,-1,Spain;España
+Germany,GER,UEFA,25,-1,Germany;Alemania;Deutschland
+Portugal,POR,UEFA,27,-1,Portugal
+Netherlands,NED,UEFA,33,-1,Netherlands;Holland;Países Bajos
+Belgium,BEL,UEFA,1,-1,Belgium;Bélgica
+Croatia,CRO,UEFA,3,-1,Croatia;Croacia
+Switzerland,SUI,UEFA,23,-1,Switzerland;Suiza
+Austria,AUT,UEFA,44,-1,Austria
+Turkey,TUR,UEFA,19,-1,Turkey;Türkiye;Turquía
+Scotland,SCO,UEFA,114,-1,Scotland;Escocia
+Czech Republic,CZE,UEFA,-1,-1,Czech Republic;Czechia;República Checa
+Norway,NOR,UEFA,-1,-1,Norway;Noruega
+Sweden,SWE,UEFA,-1,-1,Sweden;Suecia
+Bosnia and Herzegovina,BIH,UEFA,-1,-1,Bosnia and Herzegovina;Bosnia;Bosnia i Herzegovina
+United States,USA,CONCACAF,2088,-1,USA;United States of America;Estados Unidos
+Mexico,MEX,CONCACAF,764,-1,Mexico;México
+Canada,CAN,CONCACAF,42,-1,Canada;Canadá
+Panama,PAN,CONCACAF,-1,-1,Panama;Panamá
+Curaçao,CUW,CONCACAF,-1,-1,Curaçao;Curacao
+Haiti,HAI,CONCACAF,-1,-1,Haiti;Haití
+Morocco,MAR,CAF,32,-1,Morocco;Marruecos
+Senegal,SEN,CAF,-1,-1,Senegal
+Egypt,EGY,CAF,-1,-1,Egypt;Egipto
+Ghana,GHA,CAF,-1,-1,Ghana
+South Africa,RSA,CAF,-1,-1,South Africa;Sudáfrica
+Tunisia,TUN,CAF,-1,-1,Tunisia;Túnez
+Ivory Coast,CIV,CAF,-1,-1,Ivory Coast;Côte d'Ivoire;Costa de Marfil
+Algeria,ALG,CAF,-1,-1,Algeria;Argelia
+Cape Verde,CPV,CAF,-1,-1,Cape Verde;Cabo Verde
+Democratic Republic of the Congo,COD,CAF,-1,-1,Democratic Republic of the Congo;DR Congo;Congo DR;República Democrática del Congo
+Japan,JPN,AFC,-1,-1,Japan;Japón
+South Korea,KOR,AFC,447,-1,South Korea;Korea Republic;Republic of Korea;Corea del Sur
+Australia,AUS,AFC,-1,-1,Australia
+Saudi Arabia,KSA,AFC,-1,-1,Saudi Arabia;Arabia Saudita
+Iran,IRN,AFC,-1,-1,Iran;Irán
+Iraq,IRQ,AFC,-1,-1,Iraq
+Qatar,QAT,AFC,-1,-1,Qatar
+Uzbekistan,UZB,AFC,-1,-1,Uzbekistan;Uzbekistán
+Jordan,JOR,AFC,-1,-1,Jordan;Jordania
+New Zealand,NZL,OFC,-1,-1,New Zealand;Nueva Zelanda

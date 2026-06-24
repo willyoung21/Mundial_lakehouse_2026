@@ -1,0 +1,163 @@
+version: 2
+
+sources:
+  - name: bronze_raw
+    description: "Tablas raw cargadas desde MinIO por ingestion/bronze_to_neon.py"
+    schema: bronze_raw
+    tables:
+      - name: statsbomb_matches
+        description: "Partidos de WC2022, Copa América 2021, Euro 2020 y Nations League"
+        columns:
+          - name: match_id
+            description: "ID único del partido en StatsBomb"
+          - name: competition_slug
+            description: "Identificador de competición: wc2022, copa_america_2021, euro_2020, etc."
+
+      - name: statsbomb_events
+        description: "Eventos de partido (tiros, pases, presiones, etc.) con columnas _json para campos anidados"
+        columns:
+          - name: match_id
+            description: "FK a statsbomb_matches.match_id"
+          - name: event_type_json
+            description: "JSON con id y name del tipo de evento (originalmente columna 'type')"
+          - name: shot_json
+            description: "JSON con detalles del tiro, incluyendo statsbomb_xg"
+          - name: pass_json
+            description: "JSON con detalles del pase"
+          - name: competition_slug
+            description: "Competición de origen"
+
+      - name: statsbomb_lineups
+        description: "Alineaciones por partido y equipo"
+
+      - name: api_fixtures
+        description: "Partidos WC2026 desde API-Football (resultado, fase, árbitro, venue)"
+        columns:
+          - name: fixture_id
+            description: "ID único del partido en API-Football"
+
+      - name: api_team_stats
+        description: "Estadísticas por equipo por partido WC2026 (posesión, tiros, xG, corners)"
+        columns:
+          - name: fixture_id
+            description: "FK a api_fixtures.fixture_id"
+
+      - name: api_player_stats
+        description: "Estadísticas por jugador por partido WC2026 (goles, asistencias, rating, minutos)"
+        columns:
+          - name: fixture_id
+            description: "FK a api_fixtures.fixture_id"
+
+      - name: wc_history
+        description: "Resultados históricos de Mundiales 1930-2022 desde Kaggle"
+        columns:
+          - name: date
+            description: "Fecha del partido"
+          - name: home_team
+            description: "Nombre del equipo local (string libre de Kaggle)"
+          - name: away_team
+            description: "Nombre del equipo visitante"
+
+      - name: wc_goalscorers
+        description: "Goleadores históricos de partidos internacionales (todos los torneos). Silver filtra a WC."
+        columns:
+          - name: date
+            description: "Fecha del partido"
+          - name: scorer
+            description: "Nombre del jugador que marcó"
+          - name: minute
+            description: "Minuto del gol"
+          - name: own_goal
+            description: "True si fue gol en propia puerta"
+          - name: penalty
+            description: "True si fue penal"
+
+      - name: wc_shootouts
+        description: "Tandas de penales históricas (todos los torneos). Silver filtra a WC."
+        columns:
+          - name: date
+            description: "Fecha del partido"
+          - name: winner
+            description: "Equipo ganador de la tanda"
+          - name: first_shooter
+            description: "Equipo que pateó primero"
+
+      - name: wc2026_squads
+        description: "Planteles WC2026: 1,363 jugadores de 48 selecciones. Rising Transfers (CC BY 4.0)."
+        columns:
+          - name: player_id
+            description: "ID interno Rising Transfers"
+          - name: player_name
+            description: "Nombre del jugador"
+          - name: country
+            description: "Nombre de la selección"
+          - name: country_code
+            description: "Código de tres letras de la selección (ENG, BRA, etc.)"
+          - name: position
+            description: "Posición: GK / DF / MF / FW"
+          - name: club
+            description: "Club actual del jugador"
+          - name: age
+            description: "Edad al momento de la exportación"
+          - name: rt_value_estimate_eur
+            description: "Valoración de mercado estimada por Rising Transfers (EUR)"
+
+      - name: wc2026_per90
+        description: "Métricas por 90 min de la temporada 2025-26 para 1,181 jugadores convocados (≥450 min liga). Rising Transfers (CC BY 4.0)."
+        columns:
+          - name: player_id
+            description: "Join key con wc2026_squads.player_id"
+          - name: player_name
+            description: "Nombre del jugador"
+          - name: season
+            description: "Temporada (2025-26)"
+          - name: minutes
+            description: "Minutos de liga jugados en la temporada"
+
+      - name: onside_predictions
+        description: "Predicciones Monte Carlo (10,000 runs) por partido WC2026. Onside Arena (CC BY 4.0). Se actualiza durante el torneo."
+        columns:
+          - name: fixture_id
+            description: "ID único del partido (ej. wc-a-md1-mex-rsa)"
+          - name: kickoff_utc
+            description: "Fecha y hora de inicio en UTC"
+          - name: home_name
+            description: "Nombre del equipo local"
+          - name: away_name
+            description: "Nombre del equipo visitante"
+          - name: model_home_pct
+            description: "Probabilidad de victoria local (0-100)"
+          - name: model_draw_pct
+            description: "Probabilidad de empate (0-100)"
+          - name: model_away_pct
+            description: "Probabilidad de victoria visitante (0-100)"
+          - name: actual_home_goals
+            description: "Goles del local (NULL si el partido no se jugó aún)"
+          - name: actual_away_goals
+            description: "Goles del visitante (NULL si el partido no se jugó aún)"
+          - name: verdict
+            description: "fav_won / fav_lost / draw (resultado vs favorito del modelo)"
+
+      - name: onside_champions
+        description: "Probabilidades de campeón por equipo. Monte Carlo 5,000 runs, actualización horaria. Onside Arena (CC BY 4.0)."
+        columns:
+          - name: rank
+            description: "Posición del equipo según probabilidad de ser campeón"
+          - name: team_code
+            description: "Código de tres letras del equipo (fra, esp, eng, etc.)"
+          - name: team_name
+            description: "Nombre del equipo"
+          - name: group
+            description: "Grupo de la fase de grupos (A-L)"
+          - name: confederation
+            description: "Confederación (UEFA, CONMEBOL, CONCACAF, etc.)"
+          - name: champion_pct
+            description: "Probabilidad de ganar el torneo (0-100)"
+          - name: reach_final_pct
+            description: "Probabilidad de llegar a la final (0-100)"
+          - name: reach_semi_pct
+            description: "Probabilidad de llegar a semifinal (0-100)"
+          - name: reach_qf_pct
+            description: "Probabilidad de llegar a cuartos (0-100)"
+          - name: reach_r16_pct
+            description: "Probabilidad de llegar a octavos (0-100)"

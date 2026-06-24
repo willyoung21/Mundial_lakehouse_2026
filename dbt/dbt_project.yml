@@ -1,0 +1,26 @@
+name: football_lakehouse
+profile: football_lakehouse
+version: "1.0.0"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  football_lakehouse:
+    staging:
+      +schema: silver
+      +materialized: view
+    marts:
+      +schema: gold
+      +materialized: table
+
+seeds:
+  football_lakehouse:
+    +schema: seeds

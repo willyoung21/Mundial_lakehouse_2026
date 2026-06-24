@@ -1,0 +1,4 @@
+-- Este archivo configura la BD interna de Airflow (metadatos del orquestador).
+-- El data warehouse (Silver + Gold) vive en Neon.tech — no en este PostgreSQL.
+-- La BD "airflow" ya es creada automáticamente por POSTGRES_DB en el servicio.
+-- No se necesita configuración adicional aquí.

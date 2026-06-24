@@ -1,0 +1,27 @@
+# Imagen de la FastAPI — football-intelligence-lakehouse
+# Usamos 3.12-slim para máxima compatibilidad con pandas / scikit-learn / psycopg2
+
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# Instala uv (gestor de paquetes)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copia archivos de dependencias primero para aprovechar la caché de Docker
+COPY pyproject.toml uv.lock* ./
+
+# Instala solo dependencias de producción (sin dev extras)
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copia el código de la API
+COPY api/ ./api/
+
+# El directorio de modelos se monta como volumen en docker-compose
+RUN mkdir -p /app/models
+
+ENV PATH="/app/.venv/bin:$PATH"
+
+EXPOSE 8000
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
