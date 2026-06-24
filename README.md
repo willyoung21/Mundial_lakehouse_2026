@@ -452,3 +452,14 @@ Mundial_2026/
 ---
 
 *Datos: worldcup26.ir · StatsBomb Open Data (CC BY-SA 4.0) · Onside Arena (CC BY 4.0) · Rising Transfers · Kaggle*
+
+---
+
+## 👤 Autor
+
+**William Botero**
+
+Data Engineer apasionado por el fútbol y la inteligencia analítica aplicada al deporte. Este proyecto nació durante el Mundial 2026 como una exploración end-to-end de ingeniería de datos moderna: desde la ingesta en crudo hasta un dashboard interactivo con predicciones en tiempo real.
+
+📧 [boterowilliam32@gmail.com](mailto:boterowilliam32@gmail.com)
+🐙 [github.com/willyoung21](https://github.com/willyoung21)
