@@ -8,7 +8,7 @@ from api.database import get_db
 
 router = APIRouter(prefix="/predict", tags=["predict"])
 
-LAMBDA_GLOBAL = 1.30   # WC historical mean goals/team/match
+LAMBDA_GLOBAL = 1.30  # WC historical mean goals/team/match
 N_SIMULATIONS = 10_000
 
 
@@ -88,7 +88,7 @@ def _simulate(lambda_home: float, lambda_away: float, n: int) -> dict:
     goals_a = rng.poisson(lambda_away, n)
 
     home_wins = int((goals_h > goals_a).sum())
-    draws     = int((goals_h == goals_a).sum())
+    draws = int((goals_h == goals_a).sum())
     away_wins = int((goals_h < goals_a).sum())
 
     avg_h = float(np.mean(goals_h))
@@ -96,7 +96,7 @@ def _simulate(lambda_home: float, lambda_away: float, n: int) -> dict:
 
     return {
         "home_win_pct": round(home_wins / n * 100, 1),
-        "draw_pct":     round(draws     / n * 100, 1),
+        "draw_pct": round(draws / n * 100, 1),
         "away_win_pct": round(away_wins / n * 100, 1),
         "avg_goals_home": round(avg_h, 2),
         "avg_goals_away": round(avg_a, 2),
@@ -150,5 +150,5 @@ def predict_winner(req: MatchupRequest, conn: Connection = Depends(get_db)):
         "away_defense_ga_per_match": round(away_r["defense"], 3),
         **result,
         "note": "Poisson model based on xG/goals from StatsBomb + WC2026 data. "
-                "Teams missing xG data use global mean (lambda=1.30).",
+        "Teams missing xG data use global mean (lambda=1.30).",
     }

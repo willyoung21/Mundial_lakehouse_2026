@@ -4,8 +4,6 @@ import io
 import os
 
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
 from minio import Minio
 from minio.error import S3Error
 
@@ -57,10 +55,7 @@ def list_objects(prefix: str, bucket: str | None = None) -> list[str]:
     """Lista las rutas de todos los objetos bajo un prefijo dado."""
     bucket = bucket or os.environ["MINIO_BUCKET"]
     client = get_client()
-    return [
-        obj.object_name
-        for obj in client.list_objects(bucket, prefix=prefix, recursive=True)
-    ]
+    return [obj.object_name for obj in client.list_objects(bucket, prefix=prefix, recursive=True)]
 
 
 def object_exists(path: str, bucket: str | None = None) -> bool:

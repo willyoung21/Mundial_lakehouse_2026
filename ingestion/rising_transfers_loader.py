@@ -46,7 +46,7 @@ def load_squads() -> None:
     df = _download_csv(SQUADS_URLS)
     print(f"  -> {len(df):,} jugadores, columnas: {list(df.columns)}")
     write_parquet(df, "raw_wc2026_squads/squads.parquet")
-    print(f"  OK raw_wc2026_squads/squads.parquet")
+    print("  OK raw_wc2026_squads/squads.parquet")
 
 
 def load_per90() -> None:
@@ -54,13 +54,13 @@ def load_per90() -> None:
     df = _download_csv(PER90_URLS)
     print(f"  -> {len(df):,} jugadores, columnas: {list(df.columns)}")
     write_parquet(df, "raw_wc2026_per90/per90_stats.parquet")
-    print(f"  OK raw_wc2026_per90/per90_stats.parquet")
+    print("  OK raw_wc2026_per90/per90_stats.parquet")
 
 
 def run() -> None:
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print("  Rising Transfers WC2026 -> Bronze (MinIO)")
-    print(f"{'='*55}")
+    print(f"{'=' * 55}")
     load_squads()
     load_per90()
     print("\nOK Carga completa. Credito: Rising Transfers (CC BY 4.0) risingtransfers.com")

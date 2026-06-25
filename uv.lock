@@ -1747,6 +1747,11 @@ notebooks = [
     { name = "seaborn" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "dbt-postgres", specifier = ">=1.8.0,<2.0.0" },
@@ -1778,6 +1783,9 @@ requires-dist = [
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.27.0" },
 ]
 provides-extras = ["dev", "notebooks", "dashboard"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.15.17" }]
 
 [[package]]
 name = "narwhals"

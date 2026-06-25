@@ -48,7 +48,6 @@ def evaluate(competition: str | None = None) -> None:
         artifact = pickle.load(f)
 
     clf = artifact["model"]
-    feature_cols = artifact["feature_cols"]
     print(f"Model loaded — trained on {artifact['train_size']} matches")
     print(f"CV accuracy: {artifact['cv_accuracy_mean']:.3f} ± {artifact['cv_accuracy_std']:.3f}")
 
@@ -86,8 +85,9 @@ def evaluate(competition: str | None = None) -> None:
 
     print("Confusion matrix:")
     cm = confusion_matrix(y, y_pred, labels=classes)
-    cm_df = pd.DataFrame(cm, index=[f"actual_{c}" for c in classes],
-                         columns=[f"pred_{c}" for c in classes])
+    cm_df = pd.DataFrame(
+        cm, index=[f"actual_{c}" for c in classes], columns=[f"pred_{c}" for c in classes]
+    )
     print(cm_df.to_string())
 
     # Per-competition breakdown
@@ -101,7 +101,7 @@ def evaluate(competition: str | None = None) -> None:
     # Confidence analysis: how accurate is the model when it's most confident?
     proba = clf.predict_proba(X)
     max_proba = proba.max(axis=1)
-    correct = (y_pred == y.values)
+    correct = y_pred == y.values
 
     print("\nAccuracy by model confidence:")
     thresholds = [0.4, 0.5, 0.6, 0.7]
@@ -111,7 +111,7 @@ def evaluate(competition: str | None = None) -> None:
         if n == 0:
             continue
         acc_t = correct[mask_t].mean()
-        print(f"  confidence >= {t:.0%}: {acc_t:.3f} ({n} matches, {n/len(X):.0%} of dataset)")
+        print(f"  confidence >= {t:.0%}: {acc_t:.3f} ({n} matches, {n / len(X):.0%} of dataset)")
 
 
 if __name__ == "__main__":

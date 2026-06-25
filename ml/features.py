@@ -17,7 +17,7 @@ import pandas as pd
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
-LAMBDA_GLOBAL = 1.30   # WC historical mean goals/team/match
+LAMBDA_GLOBAL = 1.30  # WC historical mean goals/team/match
 FEATURE_COLS = [
     "home_attack",
     "away_attack",
@@ -83,7 +83,9 @@ def _load_onside(conn: Connection) -> pd.DataFrame:
     try:
         return pd.read_sql(sql, conn)
     except Exception:
-        return pd.DataFrame(columns=["home_team", "away_team", "home_win_pct", "draw_pct", "away_win_pct"])
+        return pd.DataFrame(
+            columns=["home_team", "away_team", "home_win_pct", "draw_pct", "away_win_pct"]
+        )
 
 
 def _is_knockout(stage: str) -> int:
@@ -128,47 +130,57 @@ def build_features(conn: Connection) -> tuple[pd.DataFrame, pd.Series, pd.DataFr
         hs = team_stats.loc[ht] if ht in team_stats.index else None
         as_ = team_stats.loc[at] if at in team_stats.index else None
 
-        home_attack  = float(hs["attack"])    if hs is not None else LAMBDA_GLOBAL
-        away_attack  = float(as_["attack"])   if as_ is not None else LAMBDA_GLOBAL
-        home_defense = float(hs["defense"])   if hs is not None else LAMBDA_GLOBAL
-        away_defense = float(as_["defense"])  if as_ is not None else LAMBDA_GLOBAL
-        home_win_rate = float(hs["win_rate"]) if hs is not None else 1/3
-        away_win_rate = float(as_["win_rate"])if as_ is not None else 1/3
-        home_pts     = float(hs["pts_per_match"]) if hs is not None else 1.0
-        away_pts     = float(as_["pts_per_match"]) if as_ is not None else 1.0
+        home_attack = float(hs["attack"]) if hs is not None else LAMBDA_GLOBAL
+        away_attack = float(as_["attack"]) if as_ is not None else LAMBDA_GLOBAL
+        home_defense = float(hs["defense"]) if hs is not None else LAMBDA_GLOBAL
+        away_defense = float(as_["defense"]) if as_ is not None else LAMBDA_GLOBAL
+        home_win_rate = float(hs["win_rate"]) if hs is not None else 1 / 3
+        away_win_rate = float(as_["win_rate"]) if as_ is not None else 1 / 3
+        home_pts = float(hs["pts_per_match"]) if hs is not None else 1.0
+        away_pts = float(as_["pts_per_match"]) if as_ is not None else 1.0
 
         # Onside lookup (fuzzy: match on home_team substring)
         onside_row = onside[
-            (onside["home_team"].str.lower() == ht.lower()) &
-            (onside["away_team"].str.lower() == at.lower())
+            (onside["home_team"].str.lower() == ht.lower())
+            & (onside["away_team"].str.lower() == at.lower())
         ]
         has_onside = len(onside_row) > 0
         o_home = float(onside_row["home_win_pct"].iloc[0]) if has_onside else 0.0
-        o_draw = float(onside_row["draw_pct"].iloc[0])     if has_onside else 0.0
+        o_draw = float(onside_row["draw_pct"].iloc[0]) if has_onside else 0.0
         o_away = float(onside_row["away_win_pct"].iloc[0]) if has_onside else 0.0
 
-        rows.append({
-            "home_attack":         home_attack,
-            "away_attack":         away_attack,
-            "home_defense":        home_defense,
-            "away_defense":        away_defense,
-            "home_win_rate":       home_win_rate,
-            "away_win_rate":       away_win_rate,
-            "home_pts_per_match":  home_pts,
-            "away_pts_per_match":  away_pts,
-            "attack_diff":         home_attack - away_attack,
-            "defense_diff":        home_defense - away_defense,
-            "win_rate_diff":       home_win_rate - away_win_rate,
-            "is_knockout":         _is_knockout(m["stage"]),
-            "onside_home_win_pct": o_home,
-            "onside_draw_pct":     o_draw,
-            "onside_away_win_pct": o_away,
-            "has_onside":          int(has_onside),
-        })
+        rows.append(
+            {
+                "home_attack": home_attack,
+                "away_attack": away_attack,
+                "home_defense": home_defense,
+                "away_defense": away_defense,
+                "home_win_rate": home_win_rate,
+                "away_win_rate": away_win_rate,
+                "home_pts_per_match": home_pts,
+                "away_pts_per_match": away_pts,
+                "attack_diff": home_attack - away_attack,
+                "defense_diff": home_defense - away_defense,
+                "win_rate_diff": home_win_rate - away_win_rate,
+                "is_knockout": _is_knockout(m["stage"]),
+                "onside_home_win_pct": o_home,
+                "onside_draw_pct": o_draw,
+                "onside_away_win_pct": o_away,
+                "has_onside": int(has_onside),
+            }
+        )
 
     X = pd.DataFrame(rows, columns=FEATURE_COLS).astype(np.float64)
     y = matches["result"].reset_index(drop=True)
-    meta = matches[["match_id", "match_date", "competition_slug", "stage",
-                     "home_team_canonical", "away_team_canonical"]].reset_index(drop=True)
+    meta = matches[
+        [
+            "match_id",
+            "match_date",
+            "competition_slug",
+            "stage",
+            "home_team_canonical",
+            "away_team_canonical",
+        ]
+    ].reset_index(drop=True)
 
     return X, y, meta

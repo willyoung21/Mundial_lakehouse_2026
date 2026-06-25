@@ -17,9 +17,9 @@ load_dotenv()
 @st.cache_resource
 def get_engine() -> sa.Engine:
     user = os.environ["POSTGRES_USER"]
-    pwd  = os.environ["POSTGRES_PASSWORD"]
+    pwd = os.environ["POSTGRES_PASSWORD"]
     host = os.environ["POSTGRES_HOST"]
-    db   = os.environ["POSTGRES_DB"]
+    db = os.environ["POSTGRES_DB"]
     return sa.create_engine(
         f"postgresql+psycopg2://{user}:{pwd}@{host}/{db}?sslmode=require",
         pool_pre_ping=True,

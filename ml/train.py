@@ -19,13 +19,11 @@ import os
 import pickle
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.model_selection import StratifiedKFold, cross_val_score
-from sklearn.preprocessing import LabelEncoder
 from sqlalchemy import create_engine
 
 from ml.features import FEATURE_COLS, build_features
@@ -55,11 +53,14 @@ def train() -> None:
     print(f"Class distribution:\n{y.value_counts().to_string()}")
 
     # Temporal split: WC2026 knockout as test (empty until late June)
-    is_wc2026_knockout = (meta["competition_slug"] == "wc2026") & (meta["stage"] != "") & \
-                         ~meta["stage"].str.startswith("Group", na=False)
+    is_wc2026_knockout = (
+        (meta["competition_slug"] == "wc2026")
+        & (meta["stage"] != "")
+        & ~meta["stage"].str.startswith("Group", na=False)
+    )
 
-    X_test  = X[is_wc2026_knockout]
-    y_test  = y[is_wc2026_knockout]
+    X_test = X[is_wc2026_knockout]
+    y_test = y[is_wc2026_knockout]
     X_train = X[~is_wc2026_knockout]
     y_train = y[~is_wc2026_knockout]
 
@@ -70,7 +71,7 @@ def train() -> None:
         n_estimators=300,
         max_depth=6,
         min_samples_leaf=5,
-        class_weight="balanced",   # compensates for fewer draw samples
+        class_weight="balanced",  # compensates for fewer draw samples
         random_state=42,
         n_jobs=-1,
     )
@@ -95,7 +96,9 @@ def train() -> None:
         print("No WC2026 knockout matches yet — test set is empty.")
 
     # Feature importance
-    importance = pd.Series(clf.feature_importances_, index=FEATURE_COLS).sort_values(ascending=False)
+    importance = pd.Series(clf.feature_importances_, index=FEATURE_COLS).sort_values(
+        ascending=False
+    )
     print("\nTop feature importances:")
     print(importance.head(8).to_string())
 

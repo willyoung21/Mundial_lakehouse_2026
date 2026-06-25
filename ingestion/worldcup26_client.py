@@ -47,7 +47,11 @@ if sys.platform == "win32":
         r"C:\Program Files\Git\bin",
     ]
     _GIT_CURL_EXE = next(
-        (os.path.join(d, "curl.exe") for d in _GIT_BIN_DIRS if os.path.isfile(os.path.join(d, "curl.exe"))),
+        (
+            os.path.join(d, "curl.exe")
+            for d in _GIT_BIN_DIRS
+            if os.path.isfile(os.path.join(d, "curl.exe"))
+        ),
         None,
     )
     _CURL_EXE = _GIT_CURL_EXE or r"C:\WINDOWS\system32\curl.EXE"
@@ -63,8 +67,13 @@ else:
     _CURL_ENV = None
 
 
-def _curl(method: str, endpoint: str, body: dict | None = None, jwt: str | None = None,
-          max_retries: int = 4) -> dict | list:
+def _curl(
+    method: str,
+    endpoint: str,
+    body: dict | None = None,
+    jwt: str | None = None,
+    max_retries: int = 4,
+) -> dict | list:
     """HTTP request via curl con Git en PATH (Schannel, maneja TLS renegotiation del servidor).
 
     Reintentos con backoff: el LB de worldcup26.ir es inconsistente y a veces retorna exit 35.
@@ -79,8 +88,9 @@ def _curl(method: str, endpoint: str, body: dict | None = None, jwt: str | None 
 
     last_error: Exception | None = None
     for attempt in range(max_retries):
-        proc = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8",
-                              env=_CURL_ENV, timeout=35)
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, encoding="utf-8", env=_CURL_ENV, timeout=35
+        )
         raw = proc.stdout.strip()
 
         if proc.returncode == 0 and raw:
@@ -92,13 +102,15 @@ def _curl(method: str, endpoint: str, body: dict | None = None, jwt: str | None 
                 # El servidor devolvio HTML u otro error no-JSON
                 last_error = ValueError(f"respuesta no-JSON de /{endpoint}: {raw[:150]}")
                 if attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
                 break
 
         if proc.returncode in (35, 52, 0) and attempt < max_retries - 1:
-            wait = 2 ** attempt
-            print(f"  [retry {attempt + 1}/{max_retries - 1}] exit {proc.returncode}, esperando {wait}s...")
+            wait = 2**attempt
+            print(
+                f"  [retry {attempt + 1}/{max_retries - 1}] exit {proc.returncode}, esperando {wait}s..."
+            )
             time.sleep(wait)
             last_error = OSError(f"curl exit {proc.returncode}")
             continue
@@ -116,10 +128,14 @@ def _curl(method: str, endpoint: str, body: dict | None = None, jwt: str | None 
 
 def _get_jwt() -> str:
     """Autentica con WORLDCUP26_EMAIL + WORLDCUP26_PASSWORD y retorna el JWT."""
-    resp = _curl("POST", "auth/authenticate", body={
-        "email": os.environ["WORLDCUP26_EMAIL"],
-        "password": os.environ["WORLDCUP26_PASSWORD"],
-    })
+    resp = _curl(
+        "POST",
+        "auth/authenticate",
+        body={
+            "email": os.environ["WORLDCUP26_EMAIL"],
+            "password": os.environ["WORLDCUP26_PASSWORD"],
+        },
+    )
     jwt = resp.get("token")
     if not jwt:
         raise ValueError(f"JWT no encontrado en respuesta de /auth/authenticate: {resp}")
@@ -254,28 +270,32 @@ def fetch_fixtures(target_date: str, jwt: str, stadiums: dict) -> pd.DataFrame:
         stadium_id = str(game.get("stadium_id", ""))
         stadium_info = stadiums.get(stadium_id, {})
 
-        fixture_id = _parse_int(game.get("id") or game.get("_id")) or hash(str(game.get("_id", ""))) % (2**31)
+        fixture_id = _parse_int(game.get("id") or game.get("_id")) or hash(
+            str(game.get("_id", ""))
+        ) % (2**31)
 
-        rows.append({
-            "fixture_id": fixture_id,
-            "date": f"{game_date}T00:00:00+00:00",
-            "status": status,
-            "elapsed": time_elapsed,
-            "venue_name": stadium_info.get("name"),
-            "venue_city": stadium_info.get("city"),
-            "referee": None,
-            "league_round": _derive_league_round(game),
-            "home_team_id": _parse_int(game.get("home_team_id")),
-            "home_team_name": home_name,
-            "home_winner": home_winner,
-            "away_team_id": _parse_int(game.get("away_team_id")),
-            "away_team_name": away_name,
-            "away_winner": away_winner,
-            "goals_home": home_score,
-            "goals_away": away_score,
-            "score_ht_home": None,
-            "score_ht_away": None,
-        })
+        rows.append(
+            {
+                "fixture_id": fixture_id,
+                "date": f"{game_date}T00:00:00+00:00",
+                "status": status,
+                "elapsed": time_elapsed,
+                "venue_name": stadium_info.get("name"),
+                "venue_city": stadium_info.get("city"),
+                "referee": None,
+                "league_round": _derive_league_round(game),
+                "home_team_id": _parse_int(game.get("home_team_id")),
+                "home_team_name": home_name,
+                "home_winner": home_winner,
+                "away_team_id": _parse_int(game.get("away_team_id")),
+                "away_team_name": away_name,
+                "away_winner": away_winner,
+                "goals_home": home_score,
+                "goals_away": away_score,
+                "score_ht_home": None,
+                "score_ht_away": None,
+            }
+        )
 
     print(f"  [{_req_count} req] GET /get/games - {n_total} total, {len(rows)} en {target_date}")
     time.sleep(REQUEST_DELAY)
@@ -287,9 +307,9 @@ def run_daily_ingestion(target_date: str) -> None:
 
     Misma interfaz que api_football_client.run_daily_ingestion().
     """
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"  Ingesta WC2026 (worldcup26.ir) - {target_date}")
-    print(f"{'='*55}")
+    print(f"{'=' * 55}")
 
     jwt = _get_jwt()
     stadiums = _build_stadium_lookup(jwt)
@@ -301,11 +321,13 @@ def run_daily_ingestion(target_date: str) -> None:
 
     date_partition = f"date={target_date}"
     write_parquet(fixtures, f"raw_fixtures_2026/{date_partition}/fixtures.parquet")
-    print(f"\n  OK: {len(fixtures)} partido(s) -> raw_fixtures_2026/{date_partition}/fixtures.parquet")
+    print(
+        f"\n  OK: {len(fixtures)} partido(s) -> raw_fixtures_2026/{date_partition}/fixtures.parquet"
+    )
     print(f"  Total requests: {_req_count}")
 
 
-WC2026_END_DATE = date(2026, 7, 19)   # Final del torneo
+WC2026_END_DATE = date(2026, 7, 19)  # Final del torneo
 
 
 if __name__ == "__main__":

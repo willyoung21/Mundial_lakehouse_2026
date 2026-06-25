@@ -55,8 +55,10 @@ def _get(endpoint: str, params: dict) -> dict:
     data = response.json()
 
     remaining = data.get("paging", {}).get("remaining", "?")
-    print(f"  [{_requests_made} req] GET /{endpoint} — {len(data.get('response', []))} items  "
-          f"(remaining today: {remaining})")
+    print(
+        f"  [{_requests_made} req] GET /{endpoint} — {len(data.get('response', []))} items  "
+        f"(remaining today: {remaining})"
+    )
 
     time.sleep(REQUEST_DELAY_SECONDS)
     return data
@@ -71,11 +73,14 @@ def fetch_fixtures(target_date: str) -> pd.DataFrame:
     Returns:
         DataFrame con metadata de fixtures: equipos, resultado, fase, venue.
     """
-    data = _get("fixtures", {
-        "league": WC2026_LEAGUE_ID,
-        "season": WC2026_SEASON,
-        "date": target_date,
-    })
+    data = _get(
+        "fixtures",
+        {
+            "league": WC2026_LEAGUE_ID,
+            "season": WC2026_SEASON,
+            "date": target_date,
+        },
+    )
 
     if not data.get("response"):
         print(f"  ℹ Sin partidos para {target_date}")
@@ -89,26 +94,28 @@ def fetch_fixtures(target_date: str) -> pd.DataFrame:
         goals = item["goals"]
         score = item["score"]
 
-        rows.append({
-            "fixture_id": fixture["id"],
-            "date": fixture["date"],
-            "status": fixture["status"]["long"],
-            "elapsed": fixture["status"]["elapsed"],
-            "venue_name": fixture.get("venue", {}).get("name"),
-            "venue_city": fixture.get("venue", {}).get("city"),
-            "referee": fixture.get("referee"),
-            "league_round": league["round"],
-            "home_team_id": teams["home"]["id"],
-            "home_team_name": teams["home"]["name"],
-            "home_winner": teams["home"]["winner"],
-            "away_team_id": teams["away"]["id"],
-            "away_team_name": teams["away"]["name"],
-            "away_winner": teams["away"]["winner"],
-            "goals_home": goals["home"],
-            "goals_away": goals["away"],
-            "score_ht_home": score["halftime"]["home"],
-            "score_ht_away": score["halftime"]["away"],
-        })
+        rows.append(
+            {
+                "fixture_id": fixture["id"],
+                "date": fixture["date"],
+                "status": fixture["status"]["long"],
+                "elapsed": fixture["status"]["elapsed"],
+                "venue_name": fixture.get("venue", {}).get("name"),
+                "venue_city": fixture.get("venue", {}).get("city"),
+                "referee": fixture.get("referee"),
+                "league_round": league["round"],
+                "home_team_id": teams["home"]["id"],
+                "home_team_name": teams["home"]["name"],
+                "home_winner": teams["home"]["winner"],
+                "away_team_id": teams["away"]["id"],
+                "away_team_name": teams["away"]["name"],
+                "away_winner": teams["away"]["winner"],
+                "goals_home": goals["home"],
+                "goals_away": goals["away"],
+                "score_ht_home": score["halftime"]["home"],
+                "score_ht_away": score["halftime"]["away"],
+            }
+        )
 
     return pd.DataFrame(rows)
 
@@ -150,29 +157,31 @@ def fetch_fixture_players(fixture_id: int) -> pd.DataFrame:
             p = player_entry["player"]
             stats = player_entry["statistics"][0] if player_entry.get("statistics") else {}
 
-            rows.append({
-                "fixture_id": fixture_id,
-                "team_id": team_id,
-                "team_name": team_name,
-                "player_id": p["id"],
-                "player_name": p["name"],
-                "photo": p.get("photo"),
-                "minutes_played": stats.get("games", {}).get("minutes"),
-                "rating": stats.get("games", {}).get("rating"),
-                "goals": stats.get("goals", {}).get("total"),
-                "assists": stats.get("goals", {}).get("assists"),
-                "shots_total": stats.get("shots", {}).get("total"),
-                "shots_on_target": stats.get("shots", {}).get("on"),
-                "passes_total": stats.get("passes", {}).get("total"),
-                "passes_key": stats.get("passes", {}).get("key"),
-                "passes_accuracy": stats.get("passes", {}).get("accuracy"),
-                "tackles": stats.get("tackles", {}).get("total"),
-                "interceptions": stats.get("tackles", {}).get("interceptions"),
-                "duels_won": stats.get("duels", {}).get("won"),
-                "dribbles_success": stats.get("dribbles", {}).get("success"),
-                "yellow_cards": stats.get("cards", {}).get("yellow"),
-                "red_cards": stats.get("cards", {}).get("red"),
-            })
+            rows.append(
+                {
+                    "fixture_id": fixture_id,
+                    "team_id": team_id,
+                    "team_name": team_name,
+                    "player_id": p["id"],
+                    "player_name": p["name"],
+                    "photo": p.get("photo"),
+                    "minutes_played": stats.get("games", {}).get("minutes"),
+                    "rating": stats.get("games", {}).get("rating"),
+                    "goals": stats.get("goals", {}).get("total"),
+                    "assists": stats.get("goals", {}).get("assists"),
+                    "shots_total": stats.get("shots", {}).get("total"),
+                    "shots_on_target": stats.get("shots", {}).get("on"),
+                    "passes_total": stats.get("passes", {}).get("total"),
+                    "passes_key": stats.get("passes", {}).get("key"),
+                    "passes_accuracy": stats.get("passes", {}).get("accuracy"),
+                    "tackles": stats.get("tackles", {}).get("total"),
+                    "interceptions": stats.get("tackles", {}).get("interceptions"),
+                    "duels_won": stats.get("duels", {}).get("won"),
+                    "dribbles_success": stats.get("dribbles", {}).get("success"),
+                    "yellow_cards": stats.get("cards", {}).get("yellow"),
+                    "red_cards": stats.get("cards", {}).get("red"),
+                }
+            )
 
     return pd.DataFrame(rows)
 
@@ -182,7 +191,7 @@ def run_daily_ingestion(target_date: str) -> None:
 
     Diseñado para ser llamado desde el DAG de Airflow o manualmente.
     """
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"  Ingesta WC2026 — {target_date}")
 
     # 1. Fixtures del día

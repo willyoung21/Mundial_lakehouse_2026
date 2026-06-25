@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 from ingestion.minio_client import write_parquet
 
 PREDICTIONS_URL = "https://onsidearena.com/data/predictions.csv"
-CHAMPIONS_URL   = "https://onsidearena.com/data/champions.csv"
+CHAMPIONS_URL = "https://onsidearena.com/data/champions.csv"
 
 
 def _download_csv(url: str, label: str) -> pd.DataFrame:
@@ -68,9 +68,9 @@ def load_champions() -> None:
 
 
 def run(local_dir: str | None = None) -> None:
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print("  Onside Arena WC2026 Predictions -> Bronze (MinIO)")
-    print(f"{'='*55}")
+    print(f"{'=' * 55}")
 
     if local_dir:
         load_from_local(local_dir)
@@ -81,7 +81,9 @@ def run(local_dir: str | None = None) -> None:
         load_champions()
     except Exception as e:
         print(f"\n  FAIL Error descargando desde Onside Arena: {e}")
-        print("  -> Descarga manual: https://kaggle.com/datasets/wr0027/world-cup-2026-predictions-onside-model-outputs")
+        print(
+            "  -> Descarga manual: https://kaggle.com/datasets/wr0027/world-cup-2026-predictions-onside-model-outputs"
+        )
         print("  -> Luego: python -m ingestion.onside_loader --local <directorio>")
         raise
 

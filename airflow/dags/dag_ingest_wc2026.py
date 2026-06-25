@@ -6,13 +6,15 @@ carga el Parquet resultante a Neon y dispara el DAG de transformaciones dbt.
 """
 
 import sys
-sys.path.insert(0, '/opt/airflow')
+
+sys.path.insert(0, "/opt/airflow")
 
 from datetime import datetime, timedelta
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+
+from airflow import DAG
 
 default_args = {
     "owner": "airflow",
@@ -31,8 +33,7 @@ with DAG(
 ) as dag:
 
     def _ingest_fixtures(**context) -> None:
-        from datetime import date
-        from ingestion.worldcup26_client import run_daily_ingestion, WC2026_END_DATE
+        from ingestion.worldcup26_client import WC2026_END_DATE, run_daily_ingestion
 
         exec_date = context["data_interval_end"].date()
 
@@ -49,6 +50,7 @@ with DAG(
 
     def _load_to_neon(**context) -> None:
         from ingestion.bronze_to_neon import run
+
         run(table="api_fixtures")
 
     ingest = PythonOperator(

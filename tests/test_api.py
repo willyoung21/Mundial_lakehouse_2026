@@ -1,12 +1,12 @@
 """Tests for FastAPI endpoints — DB mocked, no Neon connection needed."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
 from api.database import get_db
+from api.main import app
 
 
 def _make_conn(rows: list[dict]):
@@ -25,6 +25,7 @@ def client():
 
 
 # ── /health ──────────────────────────────────────────────────────────────────
+
 
 def test_health(client):
     r = client.get("/health")
@@ -164,7 +165,7 @@ def test_team_stats_found(client):
 
 
 def test_team_stats_not_found(client):
-    conn = _make_conn([])   # empty result → 404
+    conn = _make_conn([])  # empty result → 404
     app.dependency_overrides[get_db] = lambda: conn
     r = client.get("/team/ZZZ/stats")
     assert r.status_code == 404
@@ -216,7 +217,7 @@ def test_predict_winner_by_name(client):
     assert "draw_pct" in data
     assert "away_win_pct" in data
     total = data["home_win_pct"] + data["draw_pct"] + data["away_win_pct"]
-    assert abs(total - 100.0) < 1.0   # probabilities sum to ~100%
+    assert abs(total - 100.0) < 1.0  # probabilities sum to ~100%
     app.dependency_overrides.clear()
 
 

@@ -1,14 +1,14 @@
 """Transparencia del modelo: Random Forest vs Onside Arena — accuracy, calibración, partidos."""
 
+import pickle
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 import streamlit as st
-
 from utils.db import query
 
 st.set_page_config(page_title="Modelo | WC2026", page_icon="🤖", layout="wide")
@@ -36,9 +36,6 @@ st.divider()
 # ── Importancia de features ────────────────────────────────────────────────────
 st.subheader("Importancia de Variables")
 
-import os
-import pickle
-
 MODEL_PATH = Path(__file__).parent.parent.parent / "models" / "model_winner_predictor.pkl"
 
 feature_importance_df = None
@@ -56,10 +53,12 @@ if MODEL_PATH.exists():
             "train_size": bundle.get("train_size"),
         }
         importances = clf.feature_importances_
-        feature_importance_df = pd.DataFrame({
-            "Feature": feature_cols,
-            "Importancia": importances,
-        }).sort_values("Importancia", ascending=True)
+        feature_importance_df = pd.DataFrame(
+            {
+                "Feature": feature_cols,
+                "Importancia": importances,
+            }
+        ).sort_values("Importancia", ascending=True)
     except Exception as e:
         st.warning(f"No se pudo cargar el modelo: {e}")
 else:
@@ -71,15 +70,18 @@ else:
 if feature_importance_df is not None:
     # Actualizar métricas reales si el modelo está disponible
     if model_meta.get("cv_accuracy_mean"):
-        col1.metric("CV Accuracy — RF",
-                    f"{model_meta['cv_accuracy_mean']*100:.1f}%",
-                    f"+{(model_meta['cv_accuracy_mean']-0.476)*100:.1f}pp vs Onside")
+        col1.metric(
+            "CV Accuracy — RF",
+            f"{model_meta['cv_accuracy_mean'] * 100:.1f}%",
+            f"+{(model_meta['cv_accuracy_mean'] - 0.476) * 100:.1f}pp vs Onside",
+        )
     if model_meta.get("train_size"):
         col4.metric("Partidos de entrenamiento", model_meta["train_size"])
 
     fig_imp = px.bar(
         feature_importance_df,
-        x="Importancia", y="Feature",
+        x="Importancia",
+        y="Feature",
         orientation="h",
         color="Importancia",
         color_continuous_scale="Blues",
@@ -93,6 +95,7 @@ st.divider()
 
 # ── Tabla de predicciones vs resultados reales ────────────────────────────────
 st.subheader("Predicciones vs Resultados Reales — WC2026")
+
 
 @st.cache_data(ttl=300)
 def load_predictions() -> pd.DataFrame:
@@ -111,20 +114,28 @@ def load_predictions() -> pd.DataFrame:
         ORDER BY kickoff_utc DESC
     """)
 
+
 df_pred = load_predictions()
 
 if df_pred.empty:
-    st.info("No hay predicciones vs resultados disponibles aún en `gold.mart_predictions`. Los datos aparecerán conforme se jueguen partidos.")
+    st.info(
+        "No hay predicciones vs resultados disponibles aún en `gold.mart_predictions`. Los datos aparecerán conforme se jueguen partidos."
+    )
 else:
     # Resumen de accuracy real (solo Onside — RF predictions no están en mart_predictions)
-    onside_acc = df_pred["onside_correcto"].mean() * 100 if "onside_correcto" in df_pred.columns else None
+    onside_acc = (
+        df_pred["onside_correcto"].mean() * 100 if "onside_correcto" in df_pred.columns else None
+    )
 
     col_a, col_b, col_c = st.columns(3)
     col_a.metric("Partidos con resultado real", len(df_pred))
     if onside_acc is not None:
         col_b.metric("Accuracy Onside (WC2026)", f"{onside_acc:.1f}%")
-    col_c.metric("Accuracy RF (CV histórico)", "58.0%",
-                 help="Cross-validation en WC2022 + Copa América + Euro. Actualiza con `python ml/evaluate.py` tras eliminatorias.")
+    col_c.metric(
+        "Accuracy RF (CV histórico)",
+        "58.0%",
+        help="Cross-validation en WC2022 + Copa América + Euro. Actualiza con `python ml/evaluate.py` tras eliminatorias.",
+    )
 
     result_map = {
         "home_win": "Local gana",
@@ -137,19 +148,22 @@ else:
 
     display = df_pred.copy()
     display["Marcador"] = (
-        display["home_score"].fillna("?").astype(str) + " – " +
-        display["away_score"].fillna("?").astype(str)
+        display["home_score"].fillna("?").astype(str)
+        + " – "
+        + display["away_score"].fillna("?").astype(str)
     )
     display["Partido"] = display["home"] + " vs " + display["away"]
     display["Real"] = display["resultado_real"].apply(_fmt_result)
     display["Onside pred."] = display["pred_onside"].apply(_fmt_result)
-    display["Onside ✓"] = display["onside_correcto"].map({True: "✅", False: "❌", 1: "✅", 0: "❌"})
+    display["Onside ✓"] = display["onside_correcto"].map({True: "✅", False: "❌"})
 
-    st.caption("Nota: las predicciones del RF en tiempo real se integrarán en la próxima iteración. Aquí se muestra el acierto de Onside Arena.")
+    st.caption(
+        "Nota: las predicciones del RF en tiempo real se integrarán en la próxima iteración. Aquí se muestra el acierto de Onside Arena."
+    )
     st.dataframe(
-        display[["match_date", "stage", "Partido", "Marcador", "Real", "Onside pred.", "Onside ✓"]].rename(
-            columns={"match_date": "Fecha", "stage": "Grupo"}
-        ),
+        display[
+            ["match_date", "stage", "Partido", "Marcador", "Real", "Onside pred.", "Onside ✓"]
+        ].rename(columns={"match_date": "Fecha", "stage": "Grupo"}),
         hide_index=True,
         use_container_width=True,
     )

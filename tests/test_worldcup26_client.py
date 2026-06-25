@@ -1,11 +1,8 @@
 """Tests for worldcup26_client.py — pure functions only, no HTTP calls."""
 
-import json
-import sys
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pandas as pd
-import pytest
 
 from ingestion.worldcup26_client import (
     _derive_league_round,
@@ -113,7 +110,7 @@ class TestFetchFixtures:
         },
         {
             "id": "2",
-            "local_date": "06/21/2026 20:00",   # different date → excluded
+            "local_date": "06/21/2026 20:00",  # different date → excluded
             "home_team_name": "France",
             "away_team_name": "Brazil",
             "home_team_id": "20",
@@ -137,8 +134,14 @@ class TestFetchFixtures:
         mock_curl.return_value = self.FAKE_GAMES
         df = fetch_fixtures("2026-06-20", jwt="token", stadiums={})
         required_cols = {
-            "fixture_id", "date", "status", "home_team_name", "away_team_name",
-            "goals_home", "goals_away", "league_round",
+            "fixture_id",
+            "date",
+            "status",
+            "home_team_name",
+            "away_team_name",
+            "goals_home",
+            "goals_away",
+            "league_round",
         }
         assert required_cols.issubset(set(df.columns))
 

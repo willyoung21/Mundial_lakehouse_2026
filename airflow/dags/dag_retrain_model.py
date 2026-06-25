@@ -9,13 +9,15 @@ para que tome el modelo nuevo. En producción: reemplazar por hot-reload.
 """
 
 import sys
-sys.path.insert(0, '/opt/airflow')
+
+sys.path.insert(0, "/opt/airflow")
 
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from airflow import DAG
 from airflow.operators.python import PythonOperator
+
+from airflow import DAG
 
 MODEL_PATH = "/opt/airflow/models/model_winner_predictor.pkl"
 
@@ -29,7 +31,7 @@ with DAG(
     dag_id="dag_retrain_model",
     default_args=default_args,
     description="Reentrenamiento semanal del modelo RF de predicción WC2026",
-    schedule_interval="0 7 * * 1",   # lunes 07:00 UTC
+    schedule_interval="0 7 * * 1",  # lunes 07:00 UTC
     start_date=datetime(2026, 6, 23),
     catchup=False,
     tags=["ml", "train", "model"],
@@ -38,6 +40,7 @@ with DAG(
     def _build_features(**context) -> None:
         """Verifica que el Gold layer tiene suficientes datos para entrenar."""
         import os
+
         from sqlalchemy import create_engine, text
 
         url = (
@@ -51,19 +54,23 @@ with DAG(
             ).scalar()
 
         if n < 10:
-            raise ValueError(f"Solo {n} partidos con resultado en Gold — demasiado poco para entrenar.")
+            raise ValueError(
+                f"Solo {n} partidos con resultado en Gold — demasiado poco para entrenar."
+            )
 
         print(f"Gold layer OK: {n} partidos completados disponibles para entrenamiento.")
 
     def _train(**context) -> None:
         """Entrena el modelo y guarda el artefacto."""
         from ml.train import train
+
         Path(MODEL_PATH).parent.mkdir(parents=True, exist_ok=True)
         train()
 
     def _verify(**context) -> None:
         """Verifica que el modelo guardado se puede cargar y predice correctamente."""
         import pickle
+
         import numpy as np
 
         if not Path(MODEL_PATH).exists():
@@ -73,13 +80,13 @@ with DAG(
             artifact = pickle.load(f)
 
         clf = artifact["model"]
-        feature_cols = artifact["feature_cols"]
 
         # Predicción de prueba con valores medios
-        X_dummy = np.array([[1.3, 1.3, 1.3, 1.3, 0.33, 0.33, 1.0, 1.0,
-                              0.0, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0]])
+        X_dummy = np.array(
+            [[1.3, 1.3, 1.3, 1.3, 0.33, 0.33, 1.0, 1.0, 0.0, 0.0, 0.0, 0, 0.0, 0.0, 0.0, 0]]
+        )
         pred = clf.predict(X_dummy)
-        proba = clf.predict_proba(X_dummy)
+        clf.predict_proba(X_dummy)
 
         print(f"Modelo verificado — prediccion dummy: {pred[0]}")
         print(f"  CV accuracy: {artifact['cv_accuracy_mean']:.3f}")

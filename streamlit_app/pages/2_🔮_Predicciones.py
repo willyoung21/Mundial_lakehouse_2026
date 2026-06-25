@@ -2,21 +2,22 @@
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import os
-import requests
-import pandas as pd
-import streamlit as st
-import plotly.graph_objects as go
 
-from utils.db import query
+import pandas as pd
+import requests
+import streamlit as st
 from utils.charts import probability_bars
+from utils.db import query
 
 st.set_page_config(page_title="Predicciones | WC2026", page_icon="🔮", layout="wide")
 st.title("🔮 Predicciones de Partidos")
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+
 
 # ── Verificar disponibilidad del API ──────────────────────────────────────────
 @st.cache_data(ttl=30)
@@ -26,6 +27,7 @@ def _api_ok() -> bool:
         return r.status_code == 200
     except Exception:
         return False
+
 
 api_available = _api_ok()
 if not api_available:
@@ -41,8 +43,9 @@ def _predict(home: str, away: str, n: int = 10_000) -> dict | None:
     if not api_available:
         return None
     try:
-        r = requests.post(f"{API_URL}/predict/winner",
-                          json={"home": home, "away": away, "n": n}, timeout=10)
+        r = requests.post(
+            f"{API_URL}/predict/winner", json={"home": home, "away": away, "n": n}, timeout=10
+        )
         if r.status_code == 200:
             return r.json()
     except Exception:
@@ -84,40 +87,54 @@ else:
     tab_tabla, tab_cards = st.tabs(["📋 Tabla resumen", "📊 Detalle con gráficas"])
 
     with tab_tabla:
-        st.caption("Las probabilidades se calculan con Monte Carlo Poisson usando estadísticas de StatsBomb + Onside Arena.")
-        n_sim = st.select_slider("Simulaciones Monte Carlo", [1000, 5000, 10000, 25000, 50000], value=10000)
+        st.caption(
+            "Las probabilidades se calculan con Monte Carlo Poisson usando estadísticas de StatsBomb + Onside Arena."
+        )
+        n_sim = st.select_slider(
+            "Simulaciones Monte Carlo", [1000, 5000, 10000, 25000, 50000], value=10000
+        )
 
         # Construir tabla de predicciones
         rows = []
         if api_available:
             prog = st.progress(0, text="Calculando predicciones...")
             for i, (_, row) in enumerate(upcoming.iterrows()):
-                prog.progress((i + 1) / len(upcoming), text=f"Prediciendo {row['home']} vs {row['away']}...")
+                prog.progress(
+                    (i + 1) / len(upcoming), text=f"Prediciendo {row['home']} vs {row['away']}..."
+                )
                 pred = _predict(row["home"], row["away"], n_sim)
                 if pred:
-                    if pred["home_win_pct"] >= pred["away_win_pct"] and pred["home_win_pct"] >= pred["draw_pct"]:
+                    if (
+                        pred["home_win_pct"] >= pred["away_win_pct"]
+                        and pred["home_win_pct"] >= pred["draw_pct"]
+                    ):
                         fav = row["home"]
                         fav_pct = pred["home_win_pct"]
-                    elif pred["draw_pct"] >= pred["home_win_pct"] and pred["draw_pct"] >= pred["away_win_pct"]:
+                    elif (
+                        pred["draw_pct"] >= pred["home_win_pct"]
+                        and pred["draw_pct"] >= pred["away_win_pct"]
+                    ):
                         fav = "Empate"
                         fav_pct = pred["draw_pct"]
                     else:
                         fav = row["away"]
                         fav_pct = pred["away_win_pct"]
-                    rows.append({
-                        "Fecha": row["match_date"],
-                        "Fase": row["stage"],
-                        "Local": row["home"],
-                        "% L": f"{pred['home_win_pct']:.0f}%",
-                        "% E": f"{pred['draw_pct']:.0f}%",
-                        "% V": f"{pred['away_win_pct']:.0f}%",
-                        "Visitante": row["away"],
-                        "Favorito": fav,
-                        "_home_pct": pred["home_win_pct"],
-                        "_pred": pred,
-                        "_home": row["home"],
-                        "_away": row["away"],
-                    })
+                    rows.append(
+                        {
+                            "Fecha": row["match_date"],
+                            "Fase": row["stage"],
+                            "Local": row["home"],
+                            "% L": f"{pred['home_win_pct']:.0f}%",
+                            "% E": f"{pred['draw_pct']:.0f}%",
+                            "% V": f"{pred['away_win_pct']:.0f}%",
+                            "Visitante": row["away"],
+                            "Favorito": fav,
+                            "_home_pct": pred["home_win_pct"],
+                            "_pred": pred,
+                            "_home": row["home"],
+                            "_away": row["away"],
+                        }
+                    )
             prog.empty()
 
         if rows:
@@ -155,10 +172,15 @@ else:
                         pred = _predict(row["home"], row["away"], n_sim2)
                         if pred:
                             fig = probability_bars(
-                                row["home"], row["away"],
-                                pred["home_win_pct"], pred["draw_pct"], pred["away_win_pct"],
+                                row["home"],
+                                row["away"],
+                                pred["home_win_pct"],
+                                pred["draw_pct"],
+                                pred["away_win_pct"],
                             )
-                            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                            st.plotly_chart(
+                                fig, use_container_width=True, config={"displayModeBar": False}
+                            )
                             with st.expander("Detalles del modelo"):
                                 c1, c2, c3 = st.columns(3)
                                 c1.metric("λ local", f"{pred.get('lambda_home', 0):.2f}")
@@ -182,8 +204,9 @@ else:
         df_played_show = played.head(show_n).copy()
         df_played_show["Partido"] = df_played_show["home"] + " vs " + df_played_show["away"]
         df_played_show["Marcador"] = (
-            df_played_show["home_score"].astype(int).astype(str) + " - " +
-            df_played_show["away_score"].astype(int).astype(str)
+            df_played_show["home_score"].astype(int).astype(str)
+            + " - "
+            + df_played_show["away_score"].astype(int).astype(str)
         )
         df_played_show["Resultado"] = df_played_show["result"].map(
             lambda r: f"{result_emoji.get(r, '')} {result_label.get(r, r)}"
@@ -209,12 +232,19 @@ else:
                     pred = _predict(row["home"], row["away"])
                     if pred:
                         fig = probability_bars(
-                            row["home"], row["away"],
-                            pred["home_win_pct"], pred["draw_pct"], pred["away_win_pct"],
+                            row["home"],
+                            row["away"],
+                            pred["home_win_pct"],
+                            pred["draw_pct"],
+                            pred["away_win_pct"],
                         )
-                        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                        st.plotly_chart(
+                            fig, use_container_width=True, config={"displayModeBar": False}
+                        )
                 with col_result:
                     score = f"{int(row['home_score'])} - {int(row['away_score'])}"
                     st.metric("Resultado", score)
-                    st.caption(f"{result_emoji.get(row['result'], '')} {result_label.get(row['result'], row['result'])}")
+                    st.caption(
+                        f"{result_emoji.get(row['result'], '')} {result_label.get(row['result'], row['result'])}"
+                    )
                 st.divider()

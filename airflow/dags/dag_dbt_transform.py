@@ -11,8 +11,9 @@ Flujo:
 
 from datetime import datetime, timedelta
 
-from airflow import DAG
 from airflow.operators.bash import BashOperator
+
+from airflow import DAG
 
 DBT_DIR = "/opt/airflow/dbt"
 DBT_CMD = "dbt"
@@ -33,7 +34,6 @@ with DAG(
     catchup=False,
     tags=["dbt", "transform", "silver", "gold"],
 ) as dag:
-
     run_staging = BashOperator(
         task_id="dbt_run_staging",
         bash_command=f"{DBT_CMD} run --select path:models/staging {DBT_FLAGS}",

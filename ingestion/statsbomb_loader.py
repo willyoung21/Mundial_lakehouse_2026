@@ -11,7 +11,6 @@ Ejecutar una sola vez al iniciar el proyecto:
 """
 
 import json
-import os
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -79,7 +78,7 @@ def load_competition(slug: str, competition_id: int, season_id: int) -> None:
     prefix = f"raw_statsbomb_{slug}"
     matches_path = f"{prefix}/matches.parquet"
 
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"  Competición: {slug}  (id={competition_id}, season={season_id})")
 
     # ── Matches ───────────────────────────────────────────────────────────────
@@ -90,6 +89,7 @@ def load_competition(slug: str, competition_id: int, season_id: int) -> None:
     else:
         print(f"  ↷ {matches_path} ya existe, cargando IDs...")
         from ingestion.minio_client import read_parquet
+
         matches = read_parquet(matches_path)
 
     match_ids = matches["match_id"].tolist()
@@ -139,7 +139,9 @@ def load_all() -> None:
         print("\n  ℹ Nations League disponible — agregando a la carga:")
         print(nl[["competition_id", "season_id", "season_name"]].to_string(index=False))
         for _, row in nl.iterrows():
-            slug = f"nations_league_{row['season_name'].replace('/', '_').replace(' ', '_').lower()}"
+            slug = (
+                f"nations_league_{row['season_name'].replace('/', '_').replace(' ', '_').lower()}"
+            )
             COMPETITIONS[slug] = {
                 "competition_id": int(row["competition_id"]),
                 "season_id": int(row["season_id"]),

@@ -1,10 +1,6 @@
 """WC2026 Football Intelligence Dashboard — página de inicio."""
 
-import os
-
-import pandas as pd
 import streamlit as st
-
 from utils.db import query
 
 st.set_page_config(
@@ -41,16 +37,12 @@ try:
         WHERE data_source = 'api_football' AND away_score IS NOT NULL
         GROUP BY away_team_name
     """)
-    top_scorer = (
-        goleadores_df.groupby("equipo")["goles"].sum()
-        .sort_values(ascending=False)
-        .head(1)
-    )
+    top_scorer = goleadores_df.groupby("equipo")["goles"].sum().sort_values(ascending=False).head(1)
 
-    played   = int(kpi_df["played"].iloc[0] or 0)
+    played = int(kpi_df["played"].iloc[0] or 0)
     upcoming = int(kpi_df["upcoming"].iloc[0] or 0)
-    goals    = int(kpi_df["total_goals"].iloc[0] or 0)
-    avg_g    = round(goals / played, 2) if played else 0
+    goals = int(kpi_df["total_goals"].iloc[0] or 0)
+    avg_g = round(goals / played, 2) if played else 0
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Partidos jugados", played)
@@ -78,13 +70,18 @@ with col_left:
     """)
     if not recent.empty:
         recent["Partido"] = (
-            recent["home_team_name"] + "  " +
-            recent["home_score"].astype(str) + " - " +
-            recent["away_score"].astype(str) + "  " +
-            recent["away_team_name"]
+            recent["home_team_name"]
+            + "  "
+            + recent["home_score"].astype(str)
+            + " - "
+            + recent["away_score"].astype(str)
+            + "  "
+            + recent["away_team_name"]
         )
         st.dataframe(
-            recent[["match_date", "stage", "Partido"]].rename(columns={"match_date": "Fecha", "stage": "Grupo"}),
+            recent[["match_date", "stage", "Partido"]].rename(
+                columns={"match_date": "Fecha", "stage": "Grupo"}
+            ),
             hide_index=True,
             use_container_width=True,
         )
@@ -103,7 +100,9 @@ with col_right:
         nxt["away_team_name"] = nxt["away_team_name"].fillna("TBD")
         nxt["Partido"] = nxt["home_team_name"] + " vs " + nxt["away_team_name"]
         st.dataframe(
-            nxt[["match_date", "stage", "Partido"]].rename(columns={"match_date": "Fecha", "stage": "Grupo"}),
+            nxt[["match_date", "stage", "Partido"]].rename(
+                columns={"match_date": "Fecha", "stage": "Grupo"}
+            ),
             hide_index=True,
             use_container_width=True,
         )
@@ -111,4 +110,6 @@ with col_right:
         st.info("No hay partidos programados disponibles.")
 
 st.divider()
-st.caption("Datos: worldcup26.ir · StatsBomb · Onside Arena · Rising Transfers · Kaggle  |  Actualización automática cada 5 min")
+st.caption(
+    "Datos: worldcup26.ir · StatsBomb · Onside Arena · Rising Transfers · Kaggle  |  Actualización automática cada 5 min"
+)

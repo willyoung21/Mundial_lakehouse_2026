@@ -126,6 +126,7 @@ def _detect_statsbomb_slugs() -> list[str]:
 
 # ── Loaders individuales ───────────────────────────────────────────────────────
 
+
 def load_statsbomb_matches(engine) -> None:
     print("\n[1/7] statsbomb_matches")
     slugs = _detect_statsbomb_slugs()
@@ -322,9 +323,9 @@ def run(table: str | None = None) -> None:
     engine = _get_engine()
     _ensure_schema(engine)
 
-    print(f"\n{'='*55}")
+    print(f"\n{'=' * 55}")
     print(f"  Bronze → Neon ({SCHEMA})")
-    print(f"{'='*55}")
+    print(f"{'=' * 55}")
 
     if table:
         if table not in LOADERS:
