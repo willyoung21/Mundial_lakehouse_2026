@@ -36,6 +36,7 @@ jobs:
       - name: Validate dbt models (parse only, no DB)
         run: |
           cp dbt/profiles.yml.example dbt/profiles.yml
+          uv run dbt deps --project-dir ./dbt --profiles-dir ./dbt
           uv run dbt parse --project-dir ./dbt --profiles-dir ./dbt
         env:
           POSTGRES_HOST: localhost
